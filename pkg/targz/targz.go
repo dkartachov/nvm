@@ -12,7 +12,7 @@ func Extract(gzipStream io.Reader) {
 	uncompressedStream, err := gzip.NewReader(gzipStream)
 
 	if err != nil {
-		log.Fatal("ExtractTarGz: NewReader failed")
+		log.Fatal("ExtractTarGz: NewReader failed\n", err)
 	}
 
 	tarReader := tar.NewReader(uncompressedStream)

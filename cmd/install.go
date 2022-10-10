@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -124,6 +125,8 @@ func installLatest() {
 	targz.Extract(resp.Body)
 
 	os.Rename(getFileNameFromVersion("18.10.0"), "18.10.0")
+
+	setExecPermissions("18.10.0")
 }
 
 func installVersion(version string) {
@@ -149,6 +152,8 @@ func installVersion(version string) {
 	targz.Extract(resp.Body)
 
 	os.Rename(getFileNameFromVersion(version), version)
+
+	setExecPermissions(version)
 }
 
 func getLatestFileFromHtml(bytes []byte) (string, error) {
@@ -175,51 +180,22 @@ func getLatestFileFromHtml(bytes []byte) (string, error) {
 	}
 }
 
-// func ExtractTarGz(gzipStream io.Reader) {
-// 	uncompressedStream, err := gzip.NewReader(gzipStream)
-
-// 	if err != nil {
-// 		log.Fatal("ExtractTarGz: NewReader failed")
-// 	}
-
-// 	tarReader := tar.NewReader(uncompressedStream)
-
-// 	for true {
-// 		header, err := tarReader.Next()
-
-// 		if err == io.EOF {
-// 			break
-// 		}
-
-// 		if err != nil {
-// 			log.Fatalf("ExtractTarGz: Next() failed: %s", err.Error())
-// 		}
-
-// 		switch header.Typeflag {
-// 		case tar.TypeDir:
-// 			if err := os.Mkdir(header.Name, 0755); err != nil {
-// 				log.Fatalf("ExtractTarGz: Mkdir() failed: %s", err.Error())
-// 			}
-// 		case tar.TypeReg:
-// 			outFile, err := os.Create(header.Name)
-// 			if err != nil {
-// 				log.Fatalf("ExtractTarGz: Create() failed: %s", err.Error())
-// 			}
-// 			defer outFile.Close()
-// 			if _, err := io.Copy(outFile, tarReader); err != nil {
-// 				log.Fatalf("ExtractTarGz: Copy() failed: %s", err.Error())
-// 			}
-// 		case tar.TypeSymlink:
-// 			os.Symlink(header.Linkname, header.Name)
-// 		default:
-// 			log.Fatalf(
-// 				"ExtractTarGz: unknown type: %s in %s",
-// 				string(header.Typeflag),
-// 				header.Name)
-// 		}
-// 	}
-// }
-
 func getFileNameFromVersion(version string) string {
 	return "node-v" + version + "-linux-x64"
+}
+
+func setExecPermissions(version string) {
+	home, _ := os.UserHomeDir()
+
+	os.Chdir(filepath.Join(home, "nvm/versions/node", version, "bin"))
+
+	files, err := ioutil.ReadDir(".")
+
+	if err != nil {
+		log.Fatal("setExecPermissions: ", err)
+	}
+
+	for _, file := range files {
+		os.Chmod(file.Name(), 0777)
+	}
 }
