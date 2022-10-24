@@ -19,7 +19,7 @@ var baseNode = "https://nodejs.org/dist"
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
-	Use:   "install",
+	Use:   "install [version]",
 	Short: "install a version of node",
 	Long:  `install a specific version of node`,
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -32,7 +32,6 @@ var installCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -120,7 +119,7 @@ func installLatest() {
 
 	home, _ := os.UserHomeDir()
 
-	os.Chdir(filepath.Join(home, "nvm/versions/node"))
+	os.Chdir(filepath.Join(home, ".nvm/versions/node"))
 
 	targz.Extract(resp.Body)
 
@@ -147,7 +146,7 @@ func installVersion(version string) {
 
 	home, _ := os.UserHomeDir()
 
-	os.Chdir(filepath.Join(home, "nvm/versions/node"))
+	os.Chdir(filepath.Join(home, ".nvm/versions/node"))
 
 	targz.Extract(resp.Body)
 
@@ -187,7 +186,7 @@ func getFileNameFromVersion(version string) string {
 func setExecPermissions(version string) {
 	home, _ := os.UserHomeDir()
 
-	os.Chdir(filepath.Join(home, "nvm/versions/node", version, "bin"))
+	os.Chdir(filepath.Join(home, ".nvm/versions/node", version, "bin"))
 
 	files, err := ioutil.ReadDir(".")
 
