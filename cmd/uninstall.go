@@ -32,7 +32,7 @@ to quickly create a Cobra application.`,
 
 		version := args[0]
 
-		if ver.Exists(version) {
+		if !ver.Exists(version) {
 			return fmt.Errorf("Version " + version + " does not exist")
 		}
 

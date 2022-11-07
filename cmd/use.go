@@ -4,11 +4,9 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -48,28 +46,6 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		version := args[0]
 		home, _ := os.UserHomeDir()
-
-		bashrc, err := os.OpenFile(filepath.Join(home, ".bashrc"), os.O_APPEND|os.O_WRONLY, os.ModeAppend)
-
-		defer bashrc.Close()
-
-		if err != nil {
-			log.Fatal("Can't open .bashrc: ", err)
-		}
-
-		path := os.Getenv("PATH")
-		paths := strings.Split(path, ":")
-
-		for i := 0; i < len(paths); i++ {
-			if strings.Contains(paths[i], ".nvm/versions/node") {
-				paths[i] = paths[len(paths)-1]
-				paths = paths[:len(paths)-1]
-				path = strings.Join(paths, ":")
-
-				break
-			}
-		}
-
 		current, err := os.Create(filepath.Join(home, ".nvm/current.txt"))
 
 		if err != nil {
@@ -79,8 +55,6 @@ to quickly create a Cobra application.`,
 		defer current.Close()
 
 		current.WriteString(version)
-
-		fmt.Println("PATH=" + filepath.Join(home, ".nvm/versions/node", version, "bin:") + path)
 	},
 }
 

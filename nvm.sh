@@ -1,9 +1,21 @@
 #!/bin/bash
 
 function nvm() {
+  function trim_path() {
+    # Delete path by parts so we can never accidentally remove sub paths
+    if [ "$PATH" == "$1" ] ; then PATH="" ; fi
+
+    PATH=${PATH//":$1:"/":"} # delete any instances in the middle
+    PATH=${PATH/#"$1:"/} # delete any instance at the beginning
+    PATH=${PATH/%":$1"/} # delete any instance in the at the end
+  }
+
   if [ $1 = "init" ]
   then
-    CURRENT_NODE="$(cat $HOME/.nvm/current.txt)"
+    export NVM_HOME="$HOME/.nvm"
+    export NVM_NODE="$NVM_HOME/versions/node"
+
+    CURRENT_NODE="$(cat $NVM_HOME/current.txt)"
 
     [[ -z "$CURRENT_NODE" ]] && return
 
@@ -12,17 +24,14 @@ function nvm() {
     return
   fi
 
-  OUTPUT=$(go run main.go "$@")
+  go run main.go "$@"
 
   if [ $? -eq 0 ]
   then
-    NEW_PATH=$(echo $OUTPUT | grep "PATH")
+    trim_path $
+    NEW_VERSION="$(cat $NVM_HOME/current.txt)"
 
-    if [ ! -z "$NEW_PATH" ]
-    then
-      eval $NEW_PATH
-    else
-      printf "$OUTPUT"
-    fi
+    echo "current: $CURRENT_NODE"
+    echo "new: $NEW_VERSION"
   fi
 }

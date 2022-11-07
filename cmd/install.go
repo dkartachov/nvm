@@ -9,13 +9,15 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/dkartachov/nvm/pkg/targz"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/html"
 )
 
-var baseNode = "https://nodejs.org/dist"
+const baseNode = "https://nodejs.org/dist"
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
@@ -79,6 +81,13 @@ func install(cmd *cobra.Command, args []string) {
 }
 
 func installLatest() {
+	s := spinner.New(spinner.CharSets[1], 100*time.Millisecond)
+	s.Prefix = "Fetching latest version..."
+
+	s.Start()
+
+	time.Sleep(500 * time.Millisecond)
+
 	resp, err := http.Get(baseNode + "/latest")
 
 	if err != nil || resp.StatusCode != http.StatusOK {
@@ -101,21 +110,27 @@ func installLatest() {
 	latestFilename, err := getLatestFileFromHtml(bytes)
 
 	if err != nil {
-		fmt.Println(err)
-
-		return
+		log.Fatalln(err)
 	}
 
 	resp, err = http.Get(baseNode + "/latest/" + latestFilename)
 
 	if err != nil {
-		fmt.Println("error: could not fetch latest file")
-		fmt.Println(err)
-
-		return
+		log.Fatalln(err)
 	}
 
 	defer resp.Body.Close()
+
+	regex, err := regexp.Compile(`\d+(\.\d+)+`)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	version := regex.FindString(latestFilename)
+
+	s.Prefix = "Installing version " + version + "..."
+	s.FinalMSG = "Installed version " + version + " ✔️"
 
 	home, _ := os.UserHomeDir()
 
@@ -123,13 +138,20 @@ func installLatest() {
 
 	targz.Extract(resp.Body)
 
-	os.Rename(getFileNameFromVersion("18.10.0"), "18.10.0")
+	os.Rename(strings.ReplaceAll(latestFilename, ".tar.gz", ""), version)
 
-	setExecPermissions("18.10.0")
+	setExecPermissions(version)
+
+	s.Stop()
 }
 
 func installVersion(version string) {
-	fmt.Println("installing version " + version)
+	s := spinner.New(spinner.CharSets[1], 100*time.Millisecond)
+	s.Prefix = "Fetching version " + version + "..."
+
+	s.Start()
+
+	time.Sleep(500 * time.Millisecond)
 
 	file := getFileNameFromVersion(version) + ".tar.gz"
 
@@ -144,6 +166,9 @@ func installVersion(version string) {
 
 	defer resp.Body.Close()
 
+	s.Prefix = "Installing version " + version + "..."
+	s.FinalMSG = "Installed version " + version + " ✔️"
+
 	home, _ := os.UserHomeDir()
 
 	os.Chdir(filepath.Join(home, ".nvm/versions/node"))
@@ -153,6 +178,8 @@ func installVersion(version string) {
 	os.Rename(getFileNameFromVersion(version), version)
 
 	setExecPermissions(version)
+
+	s.Stop()
 }
 
 func getLatestFileFromHtml(bytes []byte) (string, error) {
