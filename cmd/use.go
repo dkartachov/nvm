@@ -31,7 +31,7 @@ to quickly create a Cobra application.`,
 		version := args[0]
 		home, _ := os.UserHomeDir()
 
-		_, err = os.Stat(filepath.Join(home, ".nvm/versions/node", version))
+		_, err = os.Stat(filepath.Join(home, ".nvm/node_versions", version))
 
 		if err == nil {
 			return nil

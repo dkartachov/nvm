@@ -33,7 +33,7 @@ to quickly create a Cobra application.`,
 			log.Fatalln("Could not retrieve user home directory", err)
 		}
 
-		dir := filepath.Join(home, ".nvm/versions/node")
+		dir := filepath.Join(home, ".nvm/node_versions")
 
 		files, err := ioutil.ReadDir(dir)
 

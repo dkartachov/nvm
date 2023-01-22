@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -70,17 +71,93 @@ func validate(cmd *cobra.Command, args []string) error {
 }
 
 func install(cmd *cobra.Command, args []string) {
-	switch args[0] {
-	case "node":
-		installLatest()
+	version := args[0]
+
+	fmt.Println(version)
+
+	if version == "node" {
+		// installLatestNode()
+		installLatest("latest")
+
+		return
+	}
+
+	semanticVersion := strings.Count(version, ".")
+
+	switch semanticVersion {
+	case 0:
+		installLatest("latest-v" + version + ".x")
+		break
+	case 1:
+		// TODO add logic to fetch latest patch given major and minor
+		installLatest("v" + version + ".0")
 		break
 	default:
-		installVersion(args[0])
+		installVersion(version)
 		break
 	}
 }
 
-func installLatest() {
+func installLatest(endpoint string) {
+	dirUrl, err := url.JoinPath(baseNode, endpoint)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	resp, err := http.Get(dirUrl)
+
+	if err != nil || resp.StatusCode != http.StatusOK {
+		log.Fatalln(err)
+	}
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+
+	resp.Body.Close()
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	latestFilename, err := getLatestFileFromHtml(bytes)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	finalUrl, err := url.JoinPath(dirUrl, latestFilename)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	resp, err = http.Get(finalUrl)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer resp.Body.Close()
+
+	regex, err := regexp.Compile(`\d+(\.\d+)+`)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	version := regex.FindString(latestFilename)
+	home, _ := os.UserHomeDir()
+
+	os.Chdir(filepath.Join(home, ".nvm/node_versions"))
+
+	targz.Extract(resp.Body)
+
+	os.Rename(strings.ReplaceAll(latestFilename, ".tar.gz", ""), version)
+
+	setExecPermissions(version)
+}
+
+func installLatestNode() {
 	s := spinner.New(spinner.CharSets[1], 100*time.Millisecond)
 	s.Prefix = "Fetching latest version..."
 
@@ -88,7 +165,9 @@ func installLatest() {
 
 	time.Sleep(500 * time.Millisecond)
 
-	resp, err := http.Get(baseNode + "/latest")
+	url := baseNode + "/latest"
+
+	resp, err := http.Get(url)
 
 	if err != nil || resp.StatusCode != http.StatusOK {
 		fmt.Println("error: could not fetch latest directory")
@@ -130,11 +209,11 @@ func installLatest() {
 	version := regex.FindString(latestFilename)
 
 	s.Prefix = "Installing version " + version + "..."
-	s.FinalMSG = "Installed version " + version + " ✔️"
+	s.FinalMSG = "Installed version " + version + " ✔️\n"
 
 	home, _ := os.UserHomeDir()
 
-	os.Chdir(filepath.Join(home, ".nvm/versions/node"))
+	os.Chdir(filepath.Join(home, ".nvm/node_versions"))
 
 	targz.Extract(resp.Body)
 
@@ -143,6 +222,68 @@ func installLatest() {
 	setExecPermissions(version)
 
 	s.Stop()
+}
+
+func installLatestMajor(major string) {
+	resp, err := http.Get(baseNode + "/latest-v" + major + ".x")
+
+	if err != nil {
+		fmt.Println("installLatestMajor: error getting latest directory for major release " + major)
+		log.Fatalln(err)
+	}
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		fmt.Println("installLatestMajor: error reading response body")
+		log.Fatalln(err)
+	}
+
+	resp.Body.Close()
+
+	latestMajorFilename, err := getLatestFileFromHtml(bytes)
+
+	if err != nil {
+		fmt.Println("installLatestMajor: error getting latest filename from html")
+		log.Fatalln(err)
+	}
+
+	resp, err = http.Get(baseNode + "/latest-v" + major + ".x/" + latestMajorFilename)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer resp.Body.Close()
+
+	regex, err := regexp.Compile(`\d+(\.\d+)+`)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	version := regex.FindString(latestMajorFilename)
+
+	fmt.Println(version)
+
+	// s.Prefix = "Installing version " + major + "..."
+	// s.FinalMSG = "Installed version " + major + " ✔️"
+
+	home, _ := os.UserHomeDir()
+
+	os.Chdir(filepath.Join(home, ".nvm/node_versions"))
+
+	targz.Extract(resp.Body)
+
+	os.Rename(strings.ReplaceAll(latestMajorFilename, ".tar.gz", ""), version)
+
+	setExecPermissions(version)
+
+	// s.Stop()
+}
+
+func installLatestMinor(version string) {
+	fmt.Println("install latest major " + version)
 }
 
 func installVersion(version string) {
@@ -171,7 +312,7 @@ func installVersion(version string) {
 
 	home, _ := os.UserHomeDir()
 
-	os.Chdir(filepath.Join(home, ".nvm/versions/node"))
+	os.Chdir(filepath.Join(home, ".nvm/node_versions"))
 
 	targz.Extract(resp.Body)
 
@@ -191,7 +332,7 @@ func getLatestFileFromHtml(bytes []byte) (string, error) {
 
 		switch tokenType {
 		case html.ErrorToken:
-			return "", fmt.Errorf("error: could not get file from html")
+			return "", fmt.Errorf("getLatestFileFromHtml: could not get file from html")
 		case html.StartTagToken:
 			token := htmlTokens.Token()
 
@@ -213,7 +354,7 @@ func getFileNameFromVersion(version string) string {
 func setExecPermissions(version string) {
 	home, _ := os.UserHomeDir()
 
-	os.Chdir(filepath.Join(home, ".nvm/versions/node", version, "bin"))
+	os.Chdir(filepath.Join(home, ".nvm/node_versions", version, "bin"))
 
 	files, err := ioutil.ReadDir(".")
 

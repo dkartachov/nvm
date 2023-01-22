@@ -47,7 +47,7 @@ to quickly create a Cobra application.`,
 
 		version := args[0]
 
-		err = os.RemoveAll(filepath.Join(home, ".nvm/versions/node", version))
+		err = os.RemoveAll(filepath.Join(home, ".nvm/node_versions", version))
 
 		if err != nil {
 			log.Fatalln("Could not remove node version " + version)

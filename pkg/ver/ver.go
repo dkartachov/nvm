@@ -14,7 +14,7 @@ func Exists(version string) bool {
 		log.Fatalln("Could not retrieve user home directory", err)
 	}
 
-	_, err = os.Stat(filepath.Join(home, ".nvm/versions/node", version))
+	_, err = os.Stat(filepath.Join(home, ".nvm/node_versions", version))
 
 	if err == nil {
 		return true
