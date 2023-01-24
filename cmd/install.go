@@ -76,7 +76,6 @@ func install(cmd *cobra.Command, args []string) {
 	fmt.Println(version)
 
 	if version == "node" {
-		// installLatestNode()
 		installLatest("latest")
 
 		return
