@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -30,16 +31,29 @@ to quickly create a Cobra application.`,
 
 		version := args[0]
 		home, _ := os.UserHomeDir()
+		folders, _ := os.ReadDir(filepath.Join(home, ".nvm/node_versions"))
 
-		_, err = os.Stat(filepath.Join(home, ".nvm/node_versions", version))
+		var versions []string
 
-		if err == nil {
-			return nil
+		for i := 0; i < len(folders); i++ {
+			if strings.Contains(folders[i].Name(), version) {
+				versions = append(versions, folders[i].Name())
+			}
 		}
 
-		if os.IsNotExist(err) {
+		if len(versions) == 0 {
 			log.Fatalf("version does not exist: %s", version)
 		}
+
+		// _, err = os.Stat(filepath.Join(home, ".nvm/node_versions", version))
+
+		// if err == nil {
+		// 	return nil
+		// }
+
+		// if os.IsNotExist(err) {
+		// 	log.Fatalf("version does not exist: %s", version)
+		// }
 
 		return nil
 	},
