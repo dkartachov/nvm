@@ -14,13 +14,13 @@ function nvm() {
 
   if [ -z "$NVM_HOME" ]; then
     export NVM_HOME="$HOME/.nvm"
-    export NVM_NODE="$NVM_HOME/versions/node"
+    export NVM_NODE="$NVM_HOME/node_versions"
 
     CURRENT_NODE="$(cat $NVM_HOME/current.txt)"
 
     [[ -z "$CURRENT_NODE" ]] && return
 
-    PATH="$HOME/.nvm/versions/node/$CURRENT_NODE/bin:$PATH"
+    PATH="$HOME/.nvm/node_versions/$CURRENT_NODE/bin:$PATH"
 
     return
   fi
@@ -28,9 +28,9 @@ function nvm() {
   go run main.go "$@"
 
   if [ -n "$CURRENT_NODE" ] && [ $? -eq 0 ]; then
-    trim_path "$HOME/.nvm/versions/node/$CURRENT_NODE/bin"
+    trim_path "$HOME/.nvm/node_versions/$CURRENT_NODE/bin"
 
     CURRENT_NODE="$(cat $NVM_HOME/current.txt)"
-    PATH="$HOME/.nvm/versions/node/$CURRENT_NODE/bin:$PATH"
+    PATH="$HOME/.nvm/node_versions/$CURRENT_NODE/bin:$PATH"
   fi
 }
