@@ -14,6 +14,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/dkartachov/nvm/pkg/targz"
+	"github.com/dkartachov/nvm/pkg/ver"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/html"
 )
@@ -53,17 +54,7 @@ func validate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if args[0] == "node" {
-		return nil
-	}
-
-	re, err := regexp.Compile(`^(\d+\.)?(\d+\.)?(\*|\d+)$`)
-
-	if err != nil {
-		return err
-	}
-
-	if re.MatchString(args[0]) {
+	if args[0] == "node" || ver.IsProperFormat(args[0]) {
 		return nil
 	}
 

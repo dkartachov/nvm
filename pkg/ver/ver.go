@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 )
 
 func Exists(version string) bool {
@@ -49,4 +50,10 @@ func Get() string {
 	current := scanner.Text()
 
 	return current
+}
+
+func IsProperFormat(version string) bool {
+	re, _ := regexp.Compile(`^(\d+\.)?(\d+\.)?(\*|\d+)$`)
+
+	return re.MatchString(version)
 }
