@@ -73,8 +73,6 @@ func validate(cmd *cobra.Command, args []string) error {
 func install(cmd *cobra.Command, args []string) {
 	version := args[0]
 
-	fmt.Println(version)
-
 	if version == "node" {
 		installLatest("latest")
 
